@@ -1,0 +1,26 @@
+import {AppearanceSettings} from './AppearanceSettings';
+import React,{useContext,useEffect,useState} from 'react';
+import {Alert,ScrollView,Text,View} from 'react-native';
+import {Profile,SEX_NAMES,latestPair,readingValue} from './domain';
+import {ageInYears} from './calculations';
+import {saveProfile} from './repository';
+import {exportBackup,exportCsv,exportNotices,importBackup} from './media';
+import {useBody} from './store';
+import {Actions,Button,Card,Chips,Field,Sheet,useTheme} from './ui';
+import {DateField} from './DateField';
+export {MetricManager} from './MetricManager';
+export function ProfileScreen({manage}:{manage:()=>void}) {
+ const {s,C,scheme}=useTheme();
+ const {profile,readings,photos}=useBody();const {run}=useContext(Actions);
+ const [name,setName]=useState(profile.name),[height,setHeight]=useState(profile.height),[birthday,setBirthday]=useState(profile.birthday),[sex,setSex]=useState<NonNullable<Profile['sex']>>(profile.sex??'unspecified'),[target,setTarget]=useState(profile.target_weight??''),[license,setLicense]=useState(false);
+ useEffect(()=>{setName(profile.name);setHeight(profile.height);setBirthday(profile.birthday);setSex(profile.sex??'unspecified');setTarget(profile.target_weight??'');},[profile.name,profile.height,profile.birthday,profile.sex,profile.target_weight]);
+ const age=ageInYears(birthday),weight=latestPair(readings,'weight').slice(-1)[0],bmi=latestPair(readings,'bmi').slice(-1)[0];
+ function restore(){Alert.alert('从备份恢复？','将用所选备份整体替换当前的指标、记录、资料和照片。建议先导出当前完整备份。',[{text:'取消',style:'cancel'},{text:'选择备份并恢复',onPress:()=>void run(async()=>{if(await importBackup())Alert.alert('已恢复','记录和照片已从备份恢复。');})}]);}
+ return <ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled"><AppearanceSettings/><Card><Text style={s.h2}>我的档案</Text><Field label="称呼（选填）" value={name} onChange={setName}/><Field label="身高 cm（选填）" numeric value={height} onChange={setHeight}/><Text style={s.label}>性别（选填）</Text><Chips items={Object.entries(SEX_NAMES).map(([key,label])=>({key,label}))} value={sex} onChange={v=>setSex(v as NonNullable<Profile['sex']>)}/><DateField label="生日（选填）" value={birthday} onChange={setBirthday} dateOnly quick={false} clearable/><Text style={s.description}>年龄：{age===null?'填写生日后自动计算':`${age} 岁`}</Text><Field label="目标体重 kg（选填）" numeric value={target} onChange={setTarget}/><Text style={s.caption}>最新体重：{weight?`${readingValue(weight)} ${weight.unit}`:'暂无记录'} · BMI：{bmi?readingValue(bmi):'补充身高和体重后自动计算'}</Text><Button title="保存个人资料" secondary onPress={()=>void run(async()=>{await saveProfile({name:name.trim(),height:height.trim(),birthday:birthday.trim(),sex,target_weight:target.trim(),theme:profile.theme});Alert.alert('已保存','',[{text:'好的'}]);})}/></Card>
+  <Card><Text style={s.h2}>我的指标</Text><Text style={s.description}>调整关注顺序、启用指标或添加自定义项目。</Text><Button title="管理指标与关注" secondary onPress={manage}/></Card>
+  <Card><Text style={s.h2}>数据与备份</Text><Text style={s.description}>本机保存了 {readings.filter(r=>!r.derived_from).length} 条原始记录、{photos.length} 张照片。</Text><Button title="导出完整备份 ZIP" onPress={()=>void run(exportBackup)}/><Button title="从 ZIP 备份恢复" secondary onPress={restore}/><Button title="导出指标记录 CSV" secondary onPress={()=>void run(exportCsv)}/><Text style={s.caption}>完整备份包含照片，当前支持总大小 64 MB。CSV 仅含指标记录。文件为未加密文件，请保存到自己信任的位置。</Text></Card>
+  <Card><Text style={s.h2}>关于 myBody</Text><Text style={s.description}>0.5.0 · 离线身体变化记录</Text><Text style={s.caption}>数据保存在本机。删除应用会删除本地数据，请定期备份。参考范围来自你的填写，变化描述仅表示记录之间的差异。</Text><Button title="开源许可与来源" secondary onPress={()=>setLicense(true)}/></Card>
+  {license&&<Sheet title="开源许可与来源" onClose={()=>setLicense(false)}><ScrollView contentContainerStyle={s.page}><Text selectable style={s.description}>{LICENSE_TEXT}</Text><Button title="导出第三方软件声明" secondary onPress={()=>void run(exportNotices)}/></ScrollView></Sheet>}
+ </ScrollView>;
+}
+const LICENSE_TEXT=`myBody 0.5.0\n\n基于 PulseSense 开源项目开发。复用并改造了 SQLite 连接与迁移、类型化记录查询、本地状态管理、图表交互及备份设计。\n来源：https://github.com/SolarisXD/PulseSense\n基线：d05e59f082d68d85b2c363dff877a55c6fbf0c2e\n\nMIT License\n\nCopyright (c) 2026 PulseSense\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\nWeightTrack、Health Tracker Reports 仅作功能设计参考。未复制 GPL / AGPL 项目的代码。第三方运行依赖的许可证随源码保留，详见 THIRD_PARTY_NOTICES.json。`;

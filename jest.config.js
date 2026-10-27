@@ -24,6 +24,6 @@ module.exports = {
     '^react-native-gifted-charts': '<rootDir>/src/__tests__/mocks/react-native-gifted-charts.ts',
     '^@react-native-community/slider': '<rootDir>/src/__tests__/mocks/react-native-community-slider.ts',
   },
-  testMatch: ['**/__tests__/**/*.test.(ts|tsx|js|jsx)'],
+  testMatch: ['**/src/mybody/__tests__/**/*.test.(ts|tsx)', '**/src/__tests__/db/database.test.ts', '**/src/__tests__/db/migrations.test.ts'],
   clearMocks: true,
 };

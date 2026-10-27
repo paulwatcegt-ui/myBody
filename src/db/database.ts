@@ -50,7 +50,7 @@ export async function getDB(): Promise<SQLite.SQLiteDatabase> {
   // share a single open + migrate sequence.
   if (!dbPromise) {
     dbPromise = (async () => {
-      const db = await SQLite.openDatabaseAsync('pulsesense.db');
+      const db = await SQLite.openDatabaseAsync('mybody.db');
 
       if (!migrationsRan) {
         if (!initPromise) {
@@ -68,7 +68,12 @@ export async function getDB(): Promise<SQLite.SQLiteDatabase> {
 
       dbInstance = db;
       return db;
-    })();
+    })().catch((error) => {
+      dbPromise = null;
+      initPromise = null;
+      migrationsRan = false;
+      throw error;
+    });
   }
 
   return dbPromise;

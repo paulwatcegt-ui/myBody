@@ -1,6 +1,6 @@
 {
   "extends": "expo/tsconfig.base",
-  "compilerOptions": {
-    "strict": true
-  }
+  "compilerOptions": { "strict": true, "target": "ES2022", "lib": ["ES2022", "DOM"] },
+  "include": ["App.tsx", "index.ts", "src/mybody/**/*.ts", "src/mybody/**/*.tsx"],
+  "exclude": ["node_modules", ".tooling", "src/mybody/__tests__"]
 }

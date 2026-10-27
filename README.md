@@ -1,276 +1,80 @@
-# PulseSense
+# myBody
 
-A local-first, offline-capable mobile health companion built with React Native and Expo. PulseSense helps individuals and caregivers track personal vitals, manage medical information, monitor health trends, check drug interactions, and navigate medical emergencies using a rule-based triage engine — all without requiring cloud connectivity.
+安卓离线身体变化记录 APP。基于 PulseSense 的 MIT 源码，使用 React Native / Expo SDK 54、TypeScript、SQLite 和 Zustand。
 
-> PulseSense is not a medical device. It does not provide diagnoses, treatment recommendations, or replace professional medical advice. Always consult a qualified healthcare provider for medical decisions.
+## 使用
 
----
+安装 `delivery/myBody-0.5.0-internal.apk`。支持 Android 8.0 及以上，包含 arm64-v8a 与 x86_64。内测包采用调试证书签名、Release 离线打包；不需要 Metro 服务或账号。正式发布时请配置自己的发布证书。
 
-## Features
+- **总览**：关注指标、最新值、与上次的变化、近 30 天曲线；关注顺序可调整。
+- **记录**：一次填写多项；支持补录、编辑和删除。血压成对填写，血糖记录测量场景。
+- **趋势**：7 / 30 / 90 天与全部历史；血压双线；按单位、血糖场景分别查看。
+- **照片**：正面、侧面、背面分类；两张同角度照片并排比较。
+- **我的**：个人资料、自定义指标、完整 ZIP 备份与恢复、CSV 导出、开源声明。
 
-- **Vital Tracking** — Log standard vitals (heart rate, blood pressure, SpO₂, temperature, blood glucose, respiratory rate, weight) and define custom vitals with custom names, units, and normal ranges.
-- **Rule-Based Triage Engine** — A deterministic, offline symptom assessment tool that evaluates symptom flags and vital thresholds against a predefined rule set. Results are sorted by severity and include actionable guidance.
-- **Health Insights** — Automated trend analysis generating warning, info, and positive insights for blood pressure, pulse, SpO₂, glucose, weight, and data consistency — powered by an in-memory cached engine.
-- **Drug Interactions Checker** — Check 120+ known drug-drug interactions across major medication categories (ACE inhibitors, anticoagulants, SSRIs, beta-blockers, statins, NSAIDs, and more) with severity levels.
-- **Health Platform Sync** — Bidirectional sync with Apple HealthKit (iOS) and Google Health Connect (Android) via a unified platform adapter pattern. Supports heart rate, blood pressure, weight, SpO₂, and step count.
-- **Emergency Guidance** — Step-by-step emergency action screen with BEFAST stroke assessment, location sharing, and one-tap emergency calling.
-- **Medication Management** — Structured medication logging with morning/afternoon/night dosage tracking, reminder scheduling via local push notifications, and automatic rescheduling on changes.
-- **Condition & Allergy Tracking** — Card-based presentation of medical conditions and allergies for quick reference.
-- **Emergency Contacts** — Manage primary and secondary emergency contacts with quick-dial support.
-- **PDF & CSV Export** — Generate lab-report-style PDF exports or CSV reports for vitals history, medical ID summaries, medications, and alerts — fully offline, using on-device rendering.
-- **Backup & Restore** — Full database backup as JSON with FK-safe restore, schema version validation, column sanitization, and 50 MB size limit.
-- **Medical ID** — A one-page shareable summary of critical medical information (conditions, allergies, medications, contacts).
-- **Dark Mode** — Full dark theme support across all screens, persisted via Zustand store.
-- **Onboarding Flow** — Guided 4-screen onboarding (Welcome, Features, Setup Profile, Ready) shown on first launch.
-- **Touch-Interactive Charts** — Tap or hold on chart data points in the History tab to see exact values and dates.
-- **Offline-First** — All data is stored locally in SQLite. No account required, no data leaves the device.
+记录按身体档案、健康监测、健身与运动、生活状态、体检报告、自定义指标六类组织。新增身高、BMI、身体成分、训练重量／次数／组数／训练量、有氧能力、运动表现、睡眠、步数、饮水、饮食和疲劳程度等项目。BMI 根据体重及测量时间当时的身高自动计算，未有历史身高记录时使用档案身高；支持 kg／斤／lb 体重和 cm／m 身高的明确换算。修改、删除与补录来源后会重新计算，不把计算值重复写入原始记录。体检指标手动录入，每次记录可填写不同的参考范围。
 
----
+日期通过原生日历和 24 小时时钟选择，支持现在／今天／昨天快捷补录。自定义指标支持数值或文本、每天／每周／每月等记录频率；数值绘图，文本按时间线查看。频率用于记录提示，不含系统定时通知。
 
-## Tech Stack
+0.5.0 可直接覆盖安装 0.1.0／0.2.0／0.3.0／0.4.0，保留原来的记录与照片。数据库迁移只新增字段与预置项目；备份格式升级为 v2，兼容导入 v1。
 
-| Layer              | Technology                                                              |
-|--------------------|-------------------------------------------------------------------------|
-| **Framework**      | React Native 0.81.5 with Expo SDK ~54                                  |
-| **Language**       | TypeScript ~5.9                                                         |
-| **Navigation**     | @react-navigation/native ^7.0, stack + bottom-tabs                     |
-| **State**          | Zustand ^4.5                                                            |
-| **Local Storage**  | expo-sqlite ~16.0 (SQLite on-device), 14 tables with FK relations      |
-| **Charts**         | react-native-gifted-charts ^1.4, react-native-svg 15.12                |
-| **Animations**     | react-native-reanimated ~4.1, react-native-gesture-handler ~2.28       |
-| **PDF Generation** | expo-print ~15.0 + expo-file-system ~19.0 + expo-sharing ~14.0         |
-| **Notifications**  | expo-notifications ~0.32 (local push reminders)                        |
-| **Health (iOS)**   | react-native-health ^1.19 (Apple HealthKit)                            |
-| **Health (Android)** | react-native-health-connect ^3.5 + expo-health-connect ^0.1         |
-| **Icons**          | @expo/vector-icons ^15.0                                               |
-| **Fonts**          | @expo-google-fonts/outfit, roboto-mono, syne                           |
-| **Location**       | expo-location ~19.0                                                    |
-| **Testing**        | Jest ~29.7, @testing-library/react-native ^13.3, jest-expo ~54         |
+照片复制到应用私有目录。ZIP 包含指标、记录、档案、关注设置、照片及完整性校验；恢复整体替换本机数据，失败时保留原数据。当前备份上限 64 MB，导出文件不加密，卸载前请备份。CSV 仅含指标记录。
 
----
+## 0.5.0 新增
 
-## Architecture
+- 参考 Apple Human Interface Guidelines 的信息层级与动态颜色原则，重做标题、分组卡片、表单、图表与底部导航，保留紧凑指标布局与排序。设计说明见 docs/DESIGN.md。
+- 我的 → 外观：浅色模式、深色模式、跟随系统；默认跟随系统，切换立即生效并保存在本地档案，备份恢复也保留选择。
+- 五个页面、管理和录入弹窗、输入框、图表与系统栏统一适配主题；不清空正在编辑的档案内容。
+- 备注提示改为“例如：训练情况，报告说明，以及一切想记录下来的。。。。。”。
 
-PulseSense follows a layered architecture with clear separation between the UI, logic, data, and platform layers:
+## 0.4.0 新增
 
-- **UI Layer** — React Native screens and components using a consistent design system defined in constants (colors, typography, spacing).
-- **State Management** — Zustand stores (profile, settings, alert, theme) hydrated from SQLite on app start and kept in sync on mutation.
-- **Database Layer** — Typed query functions in `src/db/queries/` executing raw SQL against a local SQLite database. Migrations run automatically on version changes.
-- **Rule Engine** — Pure TypeScript function evaluating symptoms and vital thresholds against a deterministic rule set, producing sorted, severity-ranked results.
-- **Health Insights Engine** — 8 detection functions analyzing recent vitals for trends (BP elevation, BP drop, pulse elevation, low SpO₂, glucose patterns, weight changes, no recent vitals, consistent normal readings).
-- **Drug Interactions Engine** — 120+ interaction entries with severity-based categorization and case-insensitive partial name matching.
-- **Export Service** — Three-tier architecture: HTML templates → PDF generation via expo-print, CSV generation, and an orchestrator with preview and share capabilities.
-- **Health Platform** — Platform adapter pattern (`IOSAdapter` for Apple HealthKit, `AndroidAdapter` for Health Connect) with a lazy singleton and unified public API.
-- **Backup Service** — JSON backup/restore with FK-safe restore (PRAGMA foreign_keys=OFF during re-insertion, reverse-dependency table clearing, schema version validation, column sanitization).
+- 总览关注指标使用紧凑双列卡片；窄屏或大字体自动切换单列，保留最新值、日期和变化值，完整曲线在趋势查看。
+- 总览的“排序”入口提供上移／下移，立即保存并同步到趋势页；不改变关注选择或历史记录。
+- 趋势仅显示已关注且启用的指标；没有关注时显示引导，取消选中项后自动切换到可见指标。
+- 记录和照片日期快捷按钮只保留“今天／昨天”，原生日历和时钟继续可用。
 
-```mermaid
-graph TD
-    UI[UI Layer - Screens & Components] --> Store[Zustand Stores]
-    Store --> DB[SQLite Database]
-    Store --> Engine[Rule Engine]
-    UI --> Export[Export Service]
-    Export --> DB
-    Export --> PDF[PDF Generation]
-    UI --> Health[Health Platform]
-    Health --> DB
-    Health --> HK[Apple HealthKit / Health Connect]
-    UI --> Backup[Backup Service]
-    Backup --> DB
-    UI --> Insights[Health Insights]
-    Insights --> DB
-    UI --> DrugCheck[Drug Interactions]
-    UI --> Notif[Notification Service]
-    Notif --> DB
+## 0.3.0 新增
+
+- 指标管理按六类分组，支持分类、名称／单位搜索及仅看关注。
+- 档案增加性别、由生日计算的周岁、目标体重；展示最新体重与 BMI。
+- 点击总览指标卡片直接录入对应项目，血压保留双值，体重／身高／BMI 快捷入口只展示身高与体重。
+- BMI 自动计算并生成趋势，无需手填；旧手动 BMI 保留，自动项可跳转修改来源体重。
+- ZIP 仅保存原始数据与档案，恢复后重算 BMI；CSV 同时导出带来源说明的计算结果。年龄与 BMI 不需要新增手填项目。
+
+## 本地开发与构建（Windows）
+
+需要 Node.js 20.19.4 或以上。便携工具、SDK 和缓存放在 `.tooling/` 下，不纳入源码归档。
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bootstrap-tools.ps1
+node .tooling/npm/package/bin/npm-cli.js ci --no-audit --no-fund
+node .tooling/npm/package/bin/npm-cli.js run typecheck
+node .tooling/npm/package/bin/npm-cli.js test
+$env:CI = '1'
+$env:EXPO_NO_TELEMETRY = '1'
+node node_modules/expo/bin/cli prebuild --platform android --no-install
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1
 ```
 
----
+构建脚本使用临时 M: 路径、UTF-8 Java 输出和自动链接路径规范化，处理中文目录中的 Windows 原生工具兼容问题。已占用的其他项目盘符不会被覆盖或解除。首次构建需要联网下载依赖。
 
-## Getting Started
+`scripts/patch-toolchain.cjs` 处理 Expo SDK54 自动链接未检查盘符根目录的问题；`plugins/withMyBodyBuild.cjs` 保证原生依赖和项目使用同一盘符。
 
-### Prerequisites
+上述脚本产出可直接离线运行的 Release 内测包。Metro 热重载需要另行构建 Debug 版本；已交付的内测 APK 不依赖或连接 Metro。
 
-- Node.js 18 or later
-- npm or yarn
-- Expo CLI (`npx expo`)
-- iOS Simulator (macOS) or Android Emulator (or a physical device with the Expo Go app)
+## 数据与源码
 
-### Installation
+- `src/mybody/`：中文页面、领域模型、统一指标数据接口、照片、备份及测试。
+- `src/db/`：复用的 SQLite 连接与迁移；增加 `mb_*` 表及独立的 myBody 版本标记。
+- `scripts/`、`plugins/`：工具安装、图标生成、Windows 原生构建、测试设备和交付打包。
+- 上游其余源文件保留作来源追溯，不进入应用入口和类型检查。用药、急救、定位、健康平台同步未接入 myBody，相关原生依赖已移除。
+- 原始说明：`docs/PulseSense-README.md`。验证记录：`docs/VALIDATION.md`。
 
-```bash
-git clone https://github.com/yourusername/pulsesense.git
-cd pulsesense
-npm install
-```
+首版不含服务端、账号、云同步、报告识别、蓝牙接入或自动健康诊断。
 
-### Running the App
+## 来源与许可
 
-```bash
-npm start
-```
+上游：[SolarisXD/PulseSense](https://github.com/SolarisXD/PulseSense)，基线 `d05e59f082d68d85b2c363dff877a55c6fbf0c2e`。
 
-This starts the Expo development server. From there, you can:
-
-- Press `i` to open in iOS Simulator
-- Press `a` to open in Android Emulator
-- Scan the QR code with Expo Go on a physical device
-
-### Running Tests
-
-```bash
-npm test                 # Run all tests
-npm run test:watch       # Run tests in watch mode
-npm run test:coverage    # Run tests with coverage report
-```
-
----
-
-## Project Structure
-
-```
-pulsesense/
-├── assets/                    # Static assets (icons, splash screen)
-├── Docs/                      # Project documentation
-│   ├── PRD.md                 # Product Requirements Document
-│   ├── TRD.md                 # Technical Requirements Document
-│   ├── System_Architecture.md
-│   ├── AppFlow.md
-│   ├── UI-UX_Design.md
-│   ├── UI_Design_Guide.md
-│   ├── Backend_Schema.md
-│   ├── Implementation_Plan.md
-│   └── play_store_assets_guide.md
-├── src/
-│   ├── __tests__/             # Test files (unit + integration + E2E flow)
-│   ├── components/
-│   │   ├── conditions/        # Condition card components
-│   │   ├── emergency/         # Emergency guidance components
-│   │   ├── export/            # Export type selection components
-│   │   ├── health/            # Health insight card components
-│   │   ├── medications/       # Medication list components
-│   │   ├── ui/                # Reusable UI primitives (Button, Card, Input, etc.)
-│   │   └── vitals/            # Vital-specific components (charts, forms, tables)
-│   ├── constants/             # Design system (colors, typography, spacing, rules)
-│   ├── db/
-│   │   ├── queries/           # Typed SQL query functions per domain (11 modules)
-│   │   ├── database.ts        # Database connection manager (singleton, migrations)
-│   │   ├── migrations.ts      # Schema migration runner (v1→v2)
-│   │   ├── schema.ts          # Table definitions (14 tables + 15 indexes)
-│   │   └── seeds.ts           # Default settings seed data
-│   ├── engine/
-│   │   ├── ruleEngine.ts      # Triage rule evaluation (symptoms + vitals)
-│   │   ├── healthInsights.ts  # Trend analysis & insight generation (8 detectors)
-│   │   ├── drugInteractions.ts # Drug interaction checker (120+ entries)
-│   │   ├── healthPlatform.ts  # Platform adapter (HealthKit + Health Connect)
-│   │   └── healthPlatformTypes.ts
-│   ├── export/
-│   │   ├── csvExport.ts       # CSV generation (5 export types)
-│   │   ├── exportService.ts   # Orchestrator: PDF + CSV, preview, share
-│   │   └── pdfTemplates.ts    # HTML template builders for PDF
-│   ├── hooks/                 # Custom React hooks (useColors, useHealthInsights, etc.)
-│   ├── navigation/            # Navigators (App, Tab, Onboarding stacks)
-│   ├── screens/
-│   │   ├── conditions/        # Add/edit condition screens
-│   │   ├── emergency/         # Emergency check & action screens
-│   │   ├── export/            # Export configuration screen
-│   │   ├── medications/       # Add/edit medication & list screens
-│   │   ├── onboarding/        # 4-screen onboarding flow
-│   │   ├── settings/          # Settings & Health Connection screens
-│   │   └── tabs/              # 5 tab screens (Home, Vitals, History, Profile, Alerts)
-│   ├── services/
-│   │   ├── backupService.ts   # JSON backup/restore with FK-safe restore
-│   │   └── notificationService.ts # Medication reminder scheduling
-│   ├── store/                 # Zustand stores (profile, settings, alert, theme)
-│   └── utils/                 # Utility functions (dates, vitals, formatting)
-├── index.ts                   # App entry point
-├── app.json                   # Expo configuration
-├── eas.json                   # EAS Build configuration
-├── package.json
-├── tsconfig.json
-└── jest.config.js
-```
-
----
-
-## Database Schema
-
-PulseSense uses 14 SQLite tables with foreign key relationships and 15 performance indexes. The schema covers:
-
-| Table                  | Domain                   | Description                                      |
-|------------------------|--------------------------|--------------------------------------------------|
-| `profile`              | Core                     | User profile with birth date and blood type      |
-| `settings`             | Core                     | User preferences and app configuration           |
-| `conditions`           | Medical                  | Medical conditions with ICD-10-like categories   |
-| `allergies`            | Medical                  | Allergy records with severity levels             |
-| `emergency_contacts`   | Medical                  | Primary and secondary contacts                   |
-| `medications`          | Medications              | Structured prescriptions with dosage schedule    |
-| `medication_items`     | Medications              | Per-slot (M/A/N) medication records              |
-| `custom_vital_definitions` | Vitals               | User-defined vital type definitions              |
-| `vital_logs`           | Vitals                   | Time-series records for 7 standard vital types   |
-| `custom_vital_logs`    | Vitals                   | Time-series records for user-defined vitals      |
-| `symptom_events`       | Symptoms                 | Symptom log entries                              |
-| `rule_triggers`        | Engine                   | Rule engine trigger history                      |
-| `alerts`               | Engine                   | Generated alerts from rule engine evaluations    |
-| `health_sync`          | Health Platform          | Sync metadata (last import/export timestamps)    |
-
-Full schema documentation is available in `Docs/Backend_Schema.md`.
-
----
-
-## Navigation
-
-The app uses a bottom tab navigator with 5 tabs and a root stack for onboarding:
-
-- **Home** — Dashboard, quick vitals entry, health insights summary, emergency check access
-- **Vitals** — Log and manage vitals, define custom vitals, view recent readings
-- **History** — Tabular and chart views of vitals history with table/charts toggle
-- **Profile** — Manage profile, conditions, allergies, medications, contacts, Medical ID
-- **Alerts** — Alert history, export tools (PDF/CSV), settings, backup/restore, health connections
-
-Onboarding (Welcome → Features → Setup Profile → Ready) is shown only once when no profile exists in the database.
-
----
-
-## Testing
-
-The project includes tests for:
-
-- Rule engine logic (symptom and vital threshold evaluation)
-- Export service, PDF template generation, and CSV export
-- Health insights engine and trend detection
-- Drug interactions checker
-- Health platform adapter (mock-based)
-- Backup service (restore and export)
-- Notification service (scheduling and cancellation)
-- Zustand stores (profile, settings, alert, theme)
-- Utility functions (date formatting, vital formatting, dosage formatting, vital status)
-- Custom React hooks
-- End-to-end app flow validation
-
-Run tests with:
-
-```bash
-npm test
-```
-
----
-
-## Contributing
-
-Contributions are welcome. Please follow these guidelines:
-
-1. Open an issue to discuss proposed changes before submitting a pull request.
-2. Write tests for new functionality.
-3. Ensure all existing tests pass before submitting.
-4. Follow the existing code style and architecture conventions.
-
----
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-## Disclaimer
-
-PulseSense is a health information tool intended for reference and organizational purposes only. It is not a medical device, does not provide clinical decision support, and should not be used as a substitute for professional medical advice, diagnosis, or treatment. In an emergency, call your local emergency services immediately.
+保留根目录 `LICENSE` 中的 `Copyright (c) 2026 PulseSense` 及 MIT 许可全文。改造了数据库、查询、图表交互及备份设计；WeightTrack、Health Tracker Reports 仅用于功能参考。第三方声明见 `THIRD_PARTY_NOTICES.json`。
