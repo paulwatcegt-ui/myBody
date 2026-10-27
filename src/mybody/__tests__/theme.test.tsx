@@ -25,7 +25,7 @@ test('appearance setting saves selected preference and defaults to system',async
 });
 function luminance(hex:string){const rgb=hex.slice(1).match(/../g)!.map(v=>parseInt(v,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;}
 test.each(['light','dark'] as const)('%s text and button colors maintain readable contrast',mode=>{
- const c=PALETTES[mode];for(const [foreground,background] of [[c.ink,c.surface],[c.muted,c.surface],[c.muted,c.input],[c.onAccent,c.green]]){
+ const c=PALETTES[mode];for(const [foreground,background] of [[c.ink,c.surface],[c.muted,c.surface],[c.muted,c.input],[c.onAccent,c.accent]]){
   const a=luminance(foreground),b=luminance(background);expect((Math.max(a,b)+.05)/(Math.min(a,b)+.05)).toBeGreaterThanOrEqual(4.5);
  }
 });

@@ -40,8 +40,8 @@ try {
   } finally { Pop-Location }
   $delivery = Join-Path $root 'delivery'
   New-Item -ItemType Directory -Force -Path $delivery | Out-Null
-  Copy-Item -LiteralPath 'M:\android\app\build\outputs\apk\release\app-release.apk' -Destination (Join-Path $delivery 'myBody-0.5.0-internal.apk') -Force
-  Get-FileHash -LiteralPath (Join-Path $delivery 'myBody-0.5.0-internal.apk') -Algorithm SHA256
+  Copy-Item -LiteralPath 'M:\android\app\build\outputs\apk\release\app-release.apk' -Destination (Join-Path $delivery 'myBody-0.6.0-internal.apk') -Force
+  Get-FileHash -LiteralPath (Join-Path $delivery 'myBody-0.6.0-internal.apk') -Algorithm SHA256
 } finally {
   if ($mapped) { & subst.exe M: /D }
 }

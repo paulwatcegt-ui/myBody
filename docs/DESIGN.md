@@ -1,4 +1,14 @@
-# myBody 0.5.0 界面设计
+# myBody 0.6.0 界面设计
+
+0.6.0 统一本地 myGym 默认绿色与轻量导航风格，在 React Native 中独立实现。浅色强调色 #34C759，深色 #30D158；实心绿底黑字，浅色小号操作文字为深绿 #217A35。原 myGym 的 CSS、WebView 和 AGPL 代码未移入本项目。
+
+导航顺序为总览、趋势、记录、照片、我的。贴底横栏配细分隔线，中央记录圆钮 52dp；普通选中项通过颜色与图标线宽区分。按压缩放到 0.94，反馈 140–160ms，无弹跳或页面横滑，系统减少动态效果会禁用相关缩放与淡入。
+
+启动标志保留人物和变化曲线，用透明背景独立资源配置 Expo SplashScreen。原生启动图在首个 React 布局完成后交接到品牌加载画面；准备完成立即显示主界面，不增加固定展示时长。失败显示重试，系统减少动态效果时不淡入。
+
+我的默认展示档案摘要，编辑表单放在弹窗；退出未保存修改前确认。右上角齿轮打开全屏设置，外观、数据与备份、关于和许可归入子页；子页返回设置首页，再返回我的。沿用原档案、主题和备份数据，不增加折叠状态字段。
+
+## 既有基础
 
 参考 [Apple Human Interface Guidelines — Color](https://developer.apple.com/design/human-interface-guidelines/color) 与 [Dark Mode](https://developer.apple.com/design/human-interface-guidelines/dark-mode) 的颜色层级和深浅色适配原则，在 Android 上保留原生日期、系统字体和系统返回行为。
 

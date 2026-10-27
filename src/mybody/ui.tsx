@@ -3,6 +3,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, St
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {useTheme} from './theme';
+import {useReducedMotion} from './motion';
 export {useTheme} from './theme';
 export type Run=(task:()=>Promise<unknown>)=>Promise<boolean>;
 export const Actions=createContext<{busy:boolean;run:Run}>({busy:false,run:async()=>false});
@@ -20,7 +21,8 @@ export function Chips({items,value,onChange}:{items:{key:string;label:string}[];
 }
 export const Card=({children}:{children:React.ReactNode})=>{const {s}=useTheme();return <View style={s.card}>{children}</View>;};
 export const Empty=({text}:{text:string})=>{const {s,C}=useTheme();return <View style={s.empty}><Ionicons name="leaf-outline" size={34} color={C.green}/><Text style={s.description}>{text}</Text></View>;};
-export function Sheet({title,onClose,children}:{title:string;onClose:()=>void;children:React.ReactNode}) {
+export function Sheet({title,onClose,children,closeLabel='关闭'}:{title:string;onClose:()=>void;children:React.ReactNode;closeLabel?:string}) {
  const {s,C}=useTheme();const {busy}=useContext(Actions);
- return <Modal animationType="slide" onRequestClose={()=>!busy&&onClose()}><SafeAreaView style={s.fill}><View style={s.sheetHeader}><Text style={s.h2}>{title}</Text><Button title="关闭" secondary small onPress={onClose}/></View><KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}>{children}</KeyboardAvoidingView>{busy&&<View style={s.loadingOverlay}><ActivityIndicator color={C.green}/><Text style={s.description}>正在保存…</Text></View>}</SafeAreaView></Modal>;
+ const reduced=useReducedMotion();
+ return <Modal animationType={reduced?'none':'slide'} onRequestClose={()=>!busy&&onClose()}><SafeAreaView style={s.fill}><View style={s.sheetHeader}><Text style={s.h2}>{title}</Text><Button title={closeLabel} secondary small onPress={onClose}/></View><KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}>{children}</KeyboardAvoidingView>{busy&&<View style={s.loadingOverlay}><ActivityIndicator color={C.green}/><Text style={s.description}>正在保存…</Text></View>}</SafeAreaView></Modal>;
 }

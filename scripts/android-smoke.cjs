@@ -1,7 +1,8 @@
 const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process');
 const root=path.resolve(__dirname,'..'),out=path.join(root,'.verification'),adbPath=path.join(root,'.tooling/android-sdk/platform-tools/adb.exe');
 const device='emulator-5554';
-const adb=(...args)=>execFileSync(adbPath,['-s',device,...args],{encoding:'utf8',maxBuffer:8*1024*1024,timeout:30000});
+const serverArgs=process.env.MYBODY_ADB_PORT?['-P',process.env.MYBODY_ADB_PORT]:[];
+const adb=(...args)=>execFileSync(adbPath,[...serverArgs,'-s',device,...args],{encoding:'utf8',maxBuffer:8*1024*1024,timeout:30000});
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function nodes(){
  adb('shell','uiautomator','dump','/sdcard/mybody-window.xml');
@@ -12,7 +13,7 @@ function find(label){const all=nodes().filter(n=>{const b=n.bounds?.match(/\d+/g
 function tap(label){const node=find(label);if(!node)throw new Error('Missing UI element: '+label);const b=node.bounds.match(/\d+/g).map(Number);adb('shell','input','tap',String((b[0]+b[2])/2|0),String((b[1]+b[3])/2|0));}
 function assertText(text){if(!nodes().some(n=>(n.text||'').includes(text)||(n['content-desc']||'').includes(text)))throw new Error('Missing expected text: '+text);}
 async function waitFor(text){const end=Date.now()+30000;while(Date.now()<end){try{assertText(text);return;}catch{await pause(500);}}throw new Error('Timed out waiting for: '+text);}
-function screenshot(name){const image=execFileSync(adbPath,['-s',device,'exec-out','screencap','-p'],{maxBuffer:10*1024*1024,timeout:30000});fs.writeFileSync(path.join(out,name),image);}
+function screenshot(name){const image=execFileSync(adbPath,[...serverArgs,'-s',device,'exec-out','screencap','-p'],{maxBuffer:10*1024*1024,timeout:30000});fs.writeFileSync(path.join(out,name),image);}
 async function main(){
  fs.mkdirSync(out,{recursive:true});
  const avd=adb('emu','avd','name');if(!avd.includes('mybody_api35'))throw new Error('Only the dedicated mybody_api35 test device may be modified');

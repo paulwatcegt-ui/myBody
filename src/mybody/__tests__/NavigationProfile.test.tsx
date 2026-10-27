@@ -12,6 +12,7 @@ import {Actions} from '../ui';
 jest.mock('../repository',()=>({saveProfile:jest.fn().mockResolvedValue(undefined),moveFavorite:jest.fn().mockResolvedValue(undefined)}));
 jest.mock('../media',()=>({}));
 jest.mock('../Chart',()=>({Chart:()=>null}));
+jest.mock('../motion',()=>({useReducedMotion:()=>true}));
 beforeEach(()=>{useBody.setState({metrics:PRESETS,readings:[],photos:[],profile:{name:'',height:'175',birthday:'2000-01-01'}});jest.spyOn(Alert,'alert').mockImplementation(()=>{});});
 afterEach(()=>jest.restoreAllMocks());
 test('metric management filters by category and keyword',()=>{
@@ -25,6 +26,7 @@ test('metric management filters by category and keyword',()=>{
 test('profile age is computed and optional gender and goal persist',async()=>{
  const run=async(task:()=>Promise<unknown>)=>{await task();return true;};
  render(<Actions.Provider value={{busy:false,run}}><ProfileScreen manage={()=>{}}/></Actions.Provider>);
+ fireEvent.press(screen.getByLabelText('编辑档案'));
  expect(screen.getByText(`年龄：${ageInYears('2000-01-01')} 岁`)).toBeTruthy();
  fireEvent.press(screen.getByLabelText('女'));fireEvent.changeText(screen.getByLabelText('目标体重 kg（选填）'),'65');
  await act(async()=>fireEvent.press(screen.getByLabelText('保存个人资料')));
@@ -33,6 +35,7 @@ test('profile age is computed and optional gender and goal persist',async()=>{
 test('theme refresh does not clear unsaved profile edits and profile saving retains theme',async()=>{
  const run=async(task:()=>Promise<unknown>)=>{await task();return true;};
  render(<Actions.Provider value={{busy:false,run}}><ProfileScreen manage={()=>{}}/></Actions.Provider>);
+ fireEvent.press(screen.getByLabelText('编辑档案'));
  fireEvent.changeText(screen.getByLabelText('称呼（选填）'),'小林');
  act(()=>useBody.setState(state=>({profile:{...state.profile,theme:'dark'}})));
  expect(screen.getByLabelText('称呼（选填）').props.value).toBe('小林');

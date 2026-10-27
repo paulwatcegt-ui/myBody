@@ -11,7 +11,7 @@ async function field(label,value){
   const x=(b[0]+b[2])/2|0,h=b[3]-b[1];adb('shell','input','swipe',String(x),String(b[1]+h*.8|0),String(x),String(b[1]+h*.35|0),'250');await pause(100);
  }
  if(!input)throw new Error('Editable field not visible: '+label);
- tapNode(input);adb('shell','input','keyevent','123',...Array(35).fill('67'));adb('shell','input','text',value.replace(/ /g,'%s'));await pause(200);
+ tapNode(input);adb('shell','input','keyevent','123',...Array(35).fill('67'));if(value)adb('shell','input','text',value.replace(/ /g,'%s'));await pause(200);
  if(!nodes().some(n=>n.class==='android.widget.EditText'&&n['content-desc']===label&&n.text===value))throw new Error('Field was not entered: '+label);
  if(/(?:mInputShown|mIsInputViewShown|isInputViewShown)=true/.test(adb('shell','dumpsys','input_method')))adb('shell','input','keyevent','4');
  await pause(450);

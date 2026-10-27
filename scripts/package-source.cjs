@@ -10,6 +10,6 @@ function walk(dir,prefix=''){
  }
 }
 walk(root);fs.mkdirSync(path.join(root,'delivery'),{recursive:true});
-const target=path.join(root,'delivery/myBody-0.5.0-source.zip');fs.writeFileSync(target,zipSync(files,{level:6}));
+const target=path.join(root,'delivery/myBody-0.6.0-source.zip');fs.writeFileSync(target,zipSync(files,{level:6}));
 const sums=fs.readdirSync(path.join(root,'delivery')).filter(n=>/\.(apk|zip)$/.test(n)).map(n=>`${crypto.createHash('sha256').update(fs.readFileSync(path.join(root,'delivery',n))).digest('hex')}  ${n}`).join('\n')+'\n';
 fs.writeFileSync(path.join(root,'delivery/SHA256SUMS.txt'),sums);console.log(`Source archive: ${Object.keys(files).length} files`);
