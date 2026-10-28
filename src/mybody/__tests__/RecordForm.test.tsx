@@ -48,3 +48,17 @@ test('overview shortcut shows only the selected metric and its paired fields',as
 test('measurement note shows the requested example text',()=>{
  render(<RecordForm metricId="weight"/>);expect(screen.getByLabelText('备注（选填）').props.placeholder).toBe('例如：训练情况，报告说明，以及一切想记录下来的。。。。。');
 });
+test('weight shortcut uses profile height without requesting it or saving it again',async()=>{
+ useBody.setState({profile:{name:'',height:'175',birthday:'1990-01-01',sex:'male'}});
+ render(<Actions.Provider value={{busy:false,run}}><RecordForm metricId="weight"/></Actions.Provider>);
+ expect(screen.queryByLabelText('身高数值')).toBeNull();
+ fireEvent.changeText(screen.getByLabelText('体重数值'),'70.5');
+ expect(screen.getByText('23.02')).toBeTruthy();
+ expect(screen.queryByLabelText('基础代谢数值')).toBeNull();
+ await act(async()=>fireEvent.press(screen.getByLabelText('保存本次记录')));
+ expect(saveBatch).toHaveBeenCalledWith([expect.objectContaining({metric_id:'weight',value:70.5})]);
+});
+test('height has a separate shortcut without requesting weight',()=>{
+ render(<RecordForm metricId="height"/>);
+ expect(screen.getByLabelText('身高数值')).toBeTruthy();expect(screen.queryByLabelText('体重数值')).toBeNull();
+});

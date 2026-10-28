@@ -3,6 +3,7 @@ import {Alert,Image,Pressable,ScrollView,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {CATEGORY_NAMES,CONTEXT_NAMES,Context,POSE_NAMES,Photo,Pose,Reading,delta,latestPair,localDate,parseLocalDate,series,history,isTextReading,readingValue} from './domain';
 import {DateField} from './DateField';
+import {TrendExportSheet} from './TrendExportSheet';
 import {removeReading} from './repository';
 import {capturePhoto,deletePhoto} from './media';
 import {useBody} from './store';
@@ -11,13 +12,13 @@ import {RecordForm,contextItems} from './RecordForm';
 import {Actions,Button,Card,Chips,Empty,Field,Sheet,useTheme} from './ui';
 export type Tab='总览'|'记录'|'趋势'|'照片'|'我的';
 export {Overview} from './OverviewScreen';
-export function Trends() {
+export function Trends({exportOpen=false,onExportClose=()=>{}}:{exportOpen?:boolean;onExportClose?:()=>void}={}) {
  const {s,C,scheme}=useTheme();
  const {metrics,readings}=useBody();const {run}=useContext(Actions);
  const [metricId,setMetricId]=useState('weight'),[days,setDays]=useState('30'),[unit,setUnit]=useState(''),[context,setContext]=useState<Context>(''),[edit,setEdit]=useState<Reading|null>(null);
  const favorites=metrics.filter(m=>m.favorite&&m.active).sort((a,b)=>a.sort_order-b.sort_order||a.id.localeCompare(b.id));
  const m=favorites.find(x=>x.id===metricId)??favorites[0];
- if(!m)return <ScrollView contentContainerStyle={s.page}><Empty text="还没有关注指标，请到总览管理关注后查看趋势"/></ScrollView>;
+ if(!m)return <><ScrollView contentContainerStyle={s.page}><Empty text="还没有关注指标，请到总览管理关注后查看趋势"/></ScrollView>{exportOpen&&<TrendExportSheet onClose={onExportClose}/>}</>;
  const isText=m.value_type==='text';
  const all=isText?history(readings,m.id):series(readings,m.id),units=Array.from(new Set(all.map(r=>r.unit))),actualUnit=units.includes(unit)?unit:all[all.length-1]?.unit??m.unit;
  const actualContext=m.id===metricId?context:series(readings,m.id).slice(-1)[0]?.context??'';
@@ -33,6 +34,7 @@ export function Trends() {
   </Card><Text style={s.h2}>历史记录</Text>{!rows.length&&<Empty text="当前筛选条件下还没有记录"/>}
   {[...rows].reverse().map(r=><Card key={r.id}><View style={s.between}><Text style={[s.h2,{flex:1,lineHeight:25}]}>{readingValue(r)} <Text style={s.caption}>{r.unit}</Text></Text><Text style={s.caption}>{localDate(r.measured_at)}</Text></View>{r.context!==''&&<Text style={s.caption}>{CONTEXT_NAMES[r.context]}</Text>}
    {(r.reference_min!==null||r.reference_max!==null)&&<Text style={s.caption}>报告参考范围：{r.reference_min??'—'} ～ {r.reference_max??'—'} {r.unit}</Text>}{!!r.note&&<Text style={s.description}>{r.note}</Text>}<View style={s.row}><Button title={r.derived_from?'修改来源体重':'编辑记录'} secondary small onPress={()=>setEdit(r.derived_from?readings.find(source=>source.id===r.derived_from)??null:r)}/>{!r.derived_from&&<Button title="删除记录" danger small onPress={()=>erase(r)}/>}</View></Card>)}
+  {exportOpen&&<TrendExportSheet metricId={m.id} days={days} onClose={onExportClose}/>}
   {edit&&<Sheet title="编辑记录" onClose={()=>setEdit(null)}><RecordForm initial={edit} onSaved={()=>setEdit(null)}/></Sheet>}
  </ScrollView>;
 }

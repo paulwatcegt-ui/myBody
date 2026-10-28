@@ -30,6 +30,13 @@ export function calculateBMI(weight:number,height:number):number|null {
  const bmi=weight/(height/100)**2;
  return weight>0&&height>0&&Number.isFinite(bmi)?Math.round(bmi*100)/100:null;
 }
+// Mifflin–St Jeor estimate (kcal/day); no sex coefficient is assumed.
+export function calculateBMR(weight:number,height:number,profile:Profile,now=new Date()):number|null {
+ const age=ageInYears(profile.birthday,now);
+ if(age===null||age<18||!['male','female'].includes(profile.sex??'')||weight<=0||height<=0)return null;
+ const value=10*weight+6.25*height-5*age+(profile.sex==='male'?5:-161);
+ return Number.isFinite(value)&&value>0?Math.round(value):null;
+}
 // Computed records are a view of source measurements, never persisted or backed up.
 // Rebuilding the view makes edits, deletions and backfills update BMI consistently.
 export function withAutomaticBMI(readings:Reading[],profile:Profile):Reading[]{
@@ -42,8 +49,11 @@ export function withAutomaticBMI(readings:Reading[],profile:Profile):Reading[]{
   while(index<heights.length&&Date.parse(heights[index].measured_at)<=time)height=heights[index++];
   const kg=weightKg(weight.value,weight.unit),cm=height?heightCm(height.value,height.unit):heightCm(Number(profile.height),'cm');
   const value=kg!==null&&cm!==null?calculateBMI(kg,cm):null;
-  if(value===null)continue;
-  derived.push({id:`derived_bmi:${weight.id}`,metric_id:'bmi',measured_at:weight.measured_at,value,value2:null,unit:'kg/m²',context:'',reference_min:null,reference_max:null,text_value:null,derived_from:weight.id,note:`自动计算：体重 ${weight.value} ${weight.unit}；身高 ${height?`${height.value} ${height.unit}`:`${profile.height} cm（档案身高）`}`});
+  const bmr=kg!==null&&cm!==null?calculateBMR(kg,cm,profile,new Date(weight.measured_at)):null;
+  for(const [metric_id,result,unit] of [['bmi',value,'kg/m²'],['bmr',bmr,'kcal/天']] as const){
+   if(result===null)continue;
+   derived.push({id:`derived_${metric_id}:${weight.id}`,metric_id,measured_at:weight.measured_at,value:result,value2:null,unit,context:'',reference_min:null,reference_max:null,text_value:null,derived_from:weight.id,note:`自动计算${metric_id==='bmr'?'（Mifflin–St Jeor 估算）':''}：体重 ${weight.value} ${weight.unit}；身高 ${height?`${height.value} ${height.unit}`:`${profile.height} cm（档案身高）`}`});
+  }
  }
  return [...raw,...derived].sort((a,b)=>Date.parse(a.measured_at)-Date.parse(b.measured_at)||a.id.localeCompare(b.id));
 }

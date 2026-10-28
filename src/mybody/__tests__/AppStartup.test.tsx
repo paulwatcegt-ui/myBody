@@ -21,3 +21,10 @@ test('first layout releases the native splash and initialization failure exposes
  fireEvent(root,'layout',{nativeEvent:{layout:{width:400,height:800}}});act(()=>jest.runOnlyPendingTimers());expect(SplashScreen.hideAsync).toHaveBeenCalled();expect(SplashScreen.setOptions).toHaveBeenLastCalledWith({fade:false,duration:0});
  act(()=>useBody.setState({error:'初始化失败'}));expect(screen.getByText('初始化失败')).toBeTruthy();fireEvent.press(screen.getByLabelText('重新加载'));expect(useBody.getState().boot).toHaveBeenCalledTimes(2);
 });
+test('trend navigation header opens the export sheet and closes back to trends',()=>{
+ useBody.setState({ready:true});render(<MyBodyApp/>);
+ fireEvent.press(screen.getByLabelText('趋势'));fireEvent.press(screen.getByLabelText('导出'));
+ expect(screen.getByText('导出指标记录')).toBeTruthy();expect(screen.getByLabelText('导出 PDF 文档')).toBeTruthy();
+ fireEvent.press(screen.getByLabelText('关闭'));expect(screen.queryByText('导出指标记录')).toBeNull();
+ expect(screen.getByLabelText('导出')).toBeTruthy();
+});

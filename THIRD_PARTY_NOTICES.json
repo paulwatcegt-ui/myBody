@@ -2148,6 +2148,12 @@
     "copyrightAndLicense": null
   },
   {
+    "name": "expo-print",
+    "version": "15.0.8",
+    "license": "MIT",
+    "copyrightAndLicense": null
+  },
+  {
     "name": "expo-server",
     "version": "1.0.7",
     "license": "MIT",

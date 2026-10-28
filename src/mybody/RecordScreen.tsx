@@ -1,4 +1,4 @@
-import {calculateBMI,weightKg,heightCm} from './calculations';
+import {calculateBMI,calculateBMR,weightKg,heightCm} from './calculations';
 import React,{useContext,useState} from 'react';
 import {Alert,Pressable,ScrollView,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
@@ -19,25 +19,25 @@ export function RecordForm({initial,onSaved,onPhotos,onManage,metricId}:{metricI
  const [note,setNote]=useState(initial?.note??'');const [drafts,setDrafts]=useState<Record<string,Draft>>({});
  const draft=(m:Metric):Draft=>drafts[m.id]??{value:initial?.metric_id===m.id?initial.text_value??String(initial.value):'',value2:initial?.metric_id===m.id&&initial.value2!=null?String(initial.value2):'',unit:initial?.metric_id===m.id?initial.unit:m.unit,context:initial?.metric_id===m.id?initial.context:'',min:String(initial?.metric_id===m.id?initial.reference_min??'':m.reference_min??''),max:String(initial?.metric_id===m.id?initial.reference_max??'':m.reference_max??'')};
  const change=(m:Metric,key:keyof Draft,value:string)=>setDrafts(prev=>({...prev,[m.id]:{...(prev[m.id]??draft(m)),[key]:value}}));
- const targets=metricId&&['weight','height','bmi'].includes(metricId)?['weight','height']:[metricId];
- const active=metrics.filter(m=>initial?m.id===initial.metric_id:metricId?targets.includes(m.id):!!m.active&&m.category===category&&m.id!=='bmi');
+ const targets=metricId&&['bmi','bmr'].includes(metricId)?['weight']:[metricId];
+ const active=metrics.filter(m=>initial?m.id===initial.metric_id:metricId?targets.includes(m.id):!!m.active&&m.category===category&&!['bmi','bmr'].includes(m.id));
  const filled=metrics.filter(m=>{const d=draft(m);return !!d.value.trim()||!!d.value2.trim();}).length;
- function previewBMI(){
+ function preview(bmr=false){
   try{
    const time=Date.parse(parseLocalDate(date)),w=metrics.find(m=>m.id==='weight'),h=metrics.find(m=>m.id==='height');
    const previousWeight=history(readings,'weight',0,time).slice(-1)[0],previousHeight=history(readings,'height',0,time).slice(-1)[0];
    const dw=w?draft(w):null,dh=h?draft(h):null;
    const kg=dw?.value.trim()?weightKg(numberInput(dw.value),dw.unit):previousWeight?weightKg(previousWeight.value,previousWeight.unit):null;
    const cm=dh?.value.trim()?heightCm(numberInput(dh.value),dh.unit):previousHeight?heightCm(previousHeight.value,previousHeight.unit):heightCm(Number(profile.height),'cm');
-   return kg!==null&&cm!==null?calculateBMI(kg,cm):null;
+   return kg!==null&&cm!==null?(bmr?calculateBMR(kg,cm,profile,new Date(parseLocalDate(date))):calculateBMI(kg,cm)):null;
   }catch{return null;}
  }
- const bmiPreview=previewBMI();
+ const bmiPreview=preview(),bmrPreview=preview(true);
  async function save(){
   const ok=await run(async()=>{
    const measured_at=parseLocalDate(date);if(Date.parse(measured_at)>Date.now())throw new Error('记录时间不能晚于当前时间');const rows:Reading[]=[];
    for(const m of metrics){
-    if(initial&&m.id!==initial.metric_id||!initial&&m.id==='bmi'||metricId&&!targets.includes(m.id))continue;const d=draft(m);if(!d.value.trim()&&!d.value2.trim())continue;
+    if(initial&&m.id!==initial.metric_id||!initial&&['bmi','bmr'].includes(m.id)||metricId&&!targets.includes(m.id))continue;const d=draft(m);if(!d.value.trim()&&!d.value2.trim())continue;
     const isText=m.value_type==='text';
     rows.push({id:initial?.id??uid(),metric_id:m.id,measured_at,value:isText?0:numberInput(d.value,m.name),text_value:isText?d.value.trim():null,value2:!isText&&m.id==='bp'?numberInput(d.value2,'舒张压'):null,unit:isText?'':d.unit.trim(),context:m.id==='glucose'?d.context:'',note,reference_min:!isText&&d.min.trim()?numberInput(d.min,'参考下限'):null,reference_max:!isText&&d.max.trim()?numberInput(d.max,'参考上限'):null});
    }
@@ -57,6 +57,7 @@ export function RecordForm({initial,onSaved,onPhotos,onManage,metricId}:{metricI
    <Text style={s.description}>{category==='lab'?'按检查日期填写检测结果、单位与报告参考范围。':'按实际发生时间记录，留空项目不会保存。'}</Text>
    <Card><DateField label={category==='lab'?'检查时间':'测量时间'} value={date} onChange={setDate}/></Card>
    {category==='body'&&initial?.metric_id!=='bmi'&&<Card><Text style={s.h2}>BMI · 自动计算</Text><Text style={s.stat}>{bmiPreview??'—'}</Text><Text style={s.caption}>保存体重后自动更新 BMI 和趋势，无需填写。优先使用测量时间当时的身高记录，没有时使用档案身高。</Text>{onPhotos&&!metricId&&<Button title="进度照片" secondary onPress={onPhotos}/>}</Card>}
+   {category==='body'&&<Card><Text style={s.h2}>基础代谢 · 自动估算</Text><Text style={s.stat}>{bmrPreview===null?'—':`${bmrPreview} kcal/天`}</Text><Text style={s.caption}>采用 Mifflin–St Jeor 公式。需要身高、体重及个人档案中的生日、男女性别，仅用于成人估算。</Text></Card>}
    {active.map(m=>{const d=draft(m);return <Card key={m.id}><View style={s.between}><Text style={s.h2}>{m.name}</Text>{m.frequency&&m.frequency!=='随时'&&<Text style={s.badge}>{m.frequency}</Text>}</View>
     {m.value_type==='text'?<Field label={`${m.name}内容`} value={d.value} onChange={v=>change(m,'value',v)} multiline placeholder="填写内容、感受或说明"/>:<>
      <View style={s.row}><Field label={m.id==='bp'?'收缩压':`${m.name}数值`} numeric value={d.value} onChange={v=>change(m,'value',v)} placeholder="未填写"/>{m.id==='bp'&&<Field label="舒张压" numeric value={d.value2} onChange={v=>change(m,'value2',v)} placeholder="未填写"/>}<Field label={`${m.name}单位`} value={d.unit} onChange={v=>change(m,'unit',v)}/></View>

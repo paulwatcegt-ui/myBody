@@ -26,6 +26,7 @@ export default function MyBodyApp(){
 }
 function BodyApp(){
  const {s,C,scheme}=useTheme();
+ const [exportOpen,setExportOpen]=useState(false);
  const reduced=useReducedMotion();
  useEffect(()=>{SplashScreen.setOptions({fade:!reduced,duration:reduced?0:180});},[reduced]);
  useEffect(()=>{void SystemUI.setBackgroundColorAsync(C.bg).catch(()=>{});},[C.bg]);
@@ -36,9 +37,9 @@ function BodyApp(){
  const run:Run=async task=>{if(lock.current)return false;lock.current=true;setBusy(true);try{await task();await refresh();return true;}catch(e){Alert.alert('操作未完成',e instanceof Error?e.message:'请重试',[{text:'知道了'}]);return false;}finally{lock.current=false;setBusy(false);}};
  return <SafeAreaProvider><Actions.Provider value={{busy,run}}><SafeAreaView onLayout={()=>{requestAnimationFrame(()=>void SplashScreen.hideAsync().catch(()=>{}));}} style={s.fill} edges={['top','left','right']}><StatusBar style={scheme==='dark'?'light':'dark'}/>
  {!ready?<BootScreen error={error} onRetry={()=>void boot()}/>:<>
-  <View style={s.header}><View style={{gap:3}}><Text style={s.brand}>myBody</Text><Text style={s.hero}>{tab==='总览'?'健康摘要':tab}</Text></View>{tab==='我的'?<Pressable accessibilityRole="button" accessibilityLabel="设置" disabled={busy} onPress={()=>setSettings(true)} style={{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'}}><Ionicons name="settings-outline" size={25} color={C.green}/></Pressable>:<Text style={s.headerDate}>{tab==='总览'?localDate(new Date().toISOString()).slice(0,10):tab}</Text>}</View>
+  <View style={s.header}><View style={{gap:3}}><Text style={s.brand}>myBody</Text><Text style={s.hero}>{tab==='总览'?'健康摘要':tab}</Text></View>{tab==='趋势'?<Button title='导出' secondary small onPress={()=>setExportOpen(true)}/>:tab==='我的'?<Pressable accessibilityRole="button" accessibilityLabel="设置" disabled={busy} onPress={()=>setSettings(true)} style={{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'}}><Ionicons name="settings-outline" size={25} color={C.green}/></Pressable>:<Text style={s.headerDate}>{tab==='总览'?localDate(new Date().toISOString()).slice(0,10):tab}</Text>}</View>
   <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}>
-   {tab==='总览'?<Overview onRecord={setQuick} navigate={setTab} manage={()=>setManage(true)}/>:tab==='记录'?<RecordForm onPhotos={()=>setTab('照片')} onManage={()=>setManage(true)}/>:tab==='趋势'?<Trends/>:tab==='照片'?<Photos/>:<ProfileScreen manage={()=>setManage(true)}/>}
+   {tab==='总览'?<Overview onRecord={setQuick} navigate={setTab} manage={()=>setManage(true)}/>:tab==='记录'?<RecordForm onPhotos={()=>setTab('照片')} onManage={()=>setManage(true)}/>:tab==='趋势'?<Trends exportOpen={exportOpen} onExportClose={()=>setExportOpen(false)}/>:tab==='照片'?<Photos/>:<ProfileScreen manage={()=>setManage(true)}/>}
   </KeyboardAvoidingView>
   <BottomNavigation tab={tab} onChange={setTab} busy={busy}/>
   {quick&&<Sheet title={`记录${metrics.find(m=>m.id===quick)?.name??''}`} onClose={()=>setQuick(null)}><RecordForm metricId={quick} onSaved={()=>setQuick(null)}/></Sheet>}

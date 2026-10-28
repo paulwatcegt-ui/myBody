@@ -1,4 +1,4 @@
-import {ageInYears,validateProfile,withAutomaticBMI} from '../calculations';
+import {ageInYears,calculateBMR,validateProfile,withAutomaticBMI} from '../calculations';
 import {Profile,Reading} from '../domain';
 const profile:Profile={name:'',height:'175',birthday:'2000-10-28'};
 const row=(id:string,metric_id:string,value:number,time='2026-10-20T08:00:00Z',unit=metric_id==='height'?'cm':'kg'):Reading=>({id,metric_id,value,unit,measured_at:time,value2:null,reference_min:null,reference_max:null,context:'',note:''});
@@ -34,4 +34,17 @@ test('known units convert explicitly; unknown or nonpositive values never genera
 test('legacy manual BMI is retained alongside calculated history',()=>{
  const legacy=row('manual','bmi',22,undefined,'kg/m²');
  expect(withAutomaticBMI([legacy,row('w','weight',70)],profile)).toContainEqual(legacy);
+});
+test('BMR estimates both sex coefficients, requires adult profile and converts weight units',()=>{
+ const adult={...profile,birthday:'1990-10-28',sex:'male' as const},now=new Date(2026,9,28);
+ expect(calculateBMR(70,175,adult,now)).toBe(1619);
+ expect(calculateBMR(70,175,{...adult,sex:'female'},now)).toBe(1453);
+ for(const missing of [{sex:'unspecified'},{birthday:''},{birthday:'2020-01-01'}])expect(calculateBMR(70,175,{...adult,...missing} as Profile,now)).toBeNull();
+ const raw=[row('w','weight',140,undefined,'斤')];
+ const result=withAutomaticBMI(raw,adult),bmr=result.find(r=>r.metric_id==='bmr')!;
+ expect(bmr).toMatchObject({derived_from:'w',unit:'kcal/天',value:1624});
+ expect(withAutomaticBMI(result,adult)).toHaveLength(3);
+ expect(withAutomaticBMI([],adult)).toEqual([]);
+ expect(withAutomaticBMI([{...raw[0],value:130}],adult).find(r=>r.metric_id==='bmr')?.value).toBe(1574);
+ expect(withAutomaticBMI(raw,{...adult,height:'180'}).find(r=>r.metric_id==='bmr')?.value).toBe(1655);
 });

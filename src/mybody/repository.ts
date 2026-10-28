@@ -79,7 +79,7 @@ export async function removeReading(id: string): Promise<void> {
   await (await getDB()).runAsync('DELETE FROM mb_readings WHERE id=?', [id]);
 }
 export function validateMetric(m: Metric): void {
-  if(m.id==='bmi'&&m.value_type==='text')throw new Error('BMI 是自动计算的数值指标，不能切换为文本');
+  if(['bmi','bmr'].includes(m.id)&&m.value_type==='text')throw new Error('自动计算的数值指标不能切换为文本');
   if (!m.id || !m.name.trim() || (m.value_type!=='text'&&!m.unit.trim()) || m.name.length > 60 || m.unit.length > 24 || !(m.category in CATEGORY_NAMES)) throw new Error('请填写指标名称、分类和单位');
   if(m.value_type!==undefined&&!['number','text'].includes(m.value_type))throw new Error('指标类型无效');
   if(m.frequency!==undefined&&!(FREQUENCIES as readonly string[]).includes(m.frequency))throw new Error('记录频率无效');

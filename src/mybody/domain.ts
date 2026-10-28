@@ -32,6 +32,7 @@ export const CATEGORY_DESCRIPTIONS: Record<Category,string> = {
 export const POSE_NAMES: Record<Pose, string> = { front: '正面', side: '侧面', back: '背面' };
 export const CONTEXT_NAMES: Record<Context, string> = { '': '未标注', fasting: '空腹', postmeal: '餐后', random: '随机' };
 const presets: [string, string, Category, string][] = [
+  ['bmr','基础代谢','body','kcal/天'],
   ['weight', '体重', 'body', 'kg'], ['body_fat', '体脂率', 'body', '%'], ['muscle', '肌肉量', 'body', 'kg'],
   ['height','身高','body','cm'],['bmi','BMI','body','kg/m²'],['body_water','身体水分','body','%'],['bone_mass','骨量','body','kg'],['visceral_fat','内脏脂肪等级','body','级'],
   ['waist', '腰围', 'body', 'cm'], ['chest', '胸围', 'body', 'cm'], ['hips', '臀围', 'body', 'cm'],
