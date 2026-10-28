@@ -87,3 +87,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1
 上游：[SolarisXD/PulseSense](https://github.com/SolarisXD/PulseSense)，基线 `d05e59f082d68d85b2c363dff877a55c6fbf0c2e`。
 
 保留根目录 `LICENSE` 中的 `Copyright (c) 2026 PulseSense` 及 MIT 许可全文。改造了数据库、查询、图表交互及备份设计；WeightTrack、Health Tracker Reports 仅用于功能参考。第三方声明见 `THIRD_PARTY_NOTICES.json`。
+
+## iPhone 网页应用（PWA）
+
+新增独立纯本地 Web 构建，支持 iOS 17+ Safari 和 Cloudflare Pages 静态上传。运行 `npm run build:pwa`、`npm run package:pwa`，上传 `delivery/pwa/myBody-PWA-Cloudflare.zip`。安装、数据边界和真机验收见 [PWA 说明](docs/PWA.md)。

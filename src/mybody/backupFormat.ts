@@ -1,6 +1,6 @@
 import {validateProfile} from './calculations';
 import { Snapshot, Metric, Reading, Photo, Profile, isDate, validateReading } from './domain';
-import { validateMetric } from './repository';
+import { validateMetric } from './validation';
 export const BACKUP_VERSION = 2;
 export const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024;
 export interface BackupManifest { app: 'myBody'; version: number; exported_at: string; snapshot: Snapshot }

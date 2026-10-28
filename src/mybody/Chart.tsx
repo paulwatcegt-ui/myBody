@@ -8,9 +8,10 @@ import { Reading, localDate } from './domain';
 // Coordinates use actual timestamps: gaps between measurements remain visible.
 export function Chart({ rows, compact=false }: { rows: Reading[]; compact?: boolean }) {
   const {C}=useTheme();const s=StyleSheet.create({empty:{justifyContent:'center',alignItems:'center'},muted:{color:C.muted,fontSize:11},labels:{flexDirection:'row',justifyContent:'space-between'},caption:{color:C.muted,fontSize:12,marginTop:10,textAlign:'center'}});
+  const [containerWidth,setContainerWidth]=useState(0);
   const [selected,setSelected] = useState<string | null>(null);
   const { width:screen } = useWindowDimensions();
-  const width = Math.max(180,screen-(compact?88:80)); const height = compact?90:180;
+  const width = Math.max(180,containerWidth||screen-(compact?88:80)); const height = compact?90:180;
   if (!rows.length) return <View style={[s.empty,{height}]}><Text style={s.muted}>还没有记录，添加后可查看变化</Text></View>;
   const values = rows.flatMap(r=>r.value2 === null ? [r.value] : [r.value,r.value2]);
   const rawMin=values.reduce((a,b)=>Math.min(a,b),Infinity),rawMax=values.reduce((a,b)=>Math.max(a,b),-Infinity);
@@ -20,10 +21,10 @@ export function Chart({ rows, compact=false }: { rows: Reading[]; compact?: bool
   const y = (v:number) => 10+(max-v)/(max-min)*(height-20);
   const selectedRow=rows.find(r=>r.id===selected) ?? rows[rows.length-1];
   const caption = `${localDate(selectedRow.measured_at)} · ${selectedRow.value}${selectedRow.value2===null?'':` / ${selectedRow.value2}`} ${selectedRow.unit}`;
-  return <View accessibilityLabel={`趋势，共 ${rows.length} 条记录。${caption}`}>
+  return <View onLayout={e=>setContainerWidth(e.nativeEvent.layout.width)} accessibilityLabel={`趋势，共 ${rows.length} 条记录。${caption}`}>
     {!compact&&<View style={s.labels}><Text style={s.muted}>{rawMax.toFixed(1)}</Text><Text style={s.muted}>{rows[0].value2!==null?'收缩压 / 舒张压':''}</Text></View>}
     <Svg width={width} height={height} onPress={e=>{
-      const at=e.nativeEvent.locationX; const nearest=rows.reduce((a,b)=>Math.abs(x(a)-at)<Math.abs(x(b)-at)?a:b);setSelected(nearest.id);
+      const event=e as any;const rect=event.currentTarget?.getBoundingClientRect?.();const at=rect&&typeof event.nativeEvent.clientX==='number'?(event.nativeEvent.clientX-rect.left)*width/rect.width:e.nativeEvent.locationX; const nearest=rows.reduce((a,b)=>Math.abs(x(a)-at)<Math.abs(x(b)-at)?a:b);setSelected(nearest.id);
     }}>
       {[0.25,0.5,0.75].map(t=><Line key={t} x1={0} x2={width} y1={height*t} y2={height*t} stroke={C.border} strokeDasharray="4 5"/>)}
       <Polyline points={rows.map(r=>`${x(r)},${y(r.value)}`).join(' ')} fill="none" stroke={C.green} strokeWidth={2.5}/>

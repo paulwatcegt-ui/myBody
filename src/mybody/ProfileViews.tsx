@@ -1,5 +1,6 @@
+import {Alert} from './dialogs';
 import React,{useContext,useRef,useState} from 'react';
-import {Alert,ScrollView,Text,View} from 'react-native';
+import {ScrollView,Text,View} from 'react-native';
 import {Profile,SEX_NAMES,latestPair,readingValue} from './domain';
 import {ageInYears,calculateBMR,weightKg,heightCm} from './calculations';
 import {saveProfile} from './repository';

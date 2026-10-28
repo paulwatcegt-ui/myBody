@@ -1,5 +1,6 @@
+import {Alert} from './dialogs';
 import React,{useContext,useState} from 'react';
-import {Alert,Image,Pressable,ScrollView,Text,View} from 'react-native';
+import {Image,Pressable,ScrollView,Text,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import {CATEGORY_NAMES,CONTEXT_NAMES,Context,POSE_NAMES,Photo,Pose,Reading,delta,latestPair,localDate,parseLocalDate,series,history,isTextReading,readingValue} from './domain';
 import {DateField} from './DateField';
@@ -46,7 +47,7 @@ export function Photos() {
  const take=(camera:boolean)=>void run(async()=>{await capturePhoto(camera,pose,parseLocalDate(date),note);});
  function remove(p:Photo){Alert.alert('删除照片？','照片及其日期备注将从本机移除。',[{text:'取消',style:'cancel'},{text:'删除',style:'destructive',onPress:()=>void run(async()=>{await deletePhoto(p);setSelected(ids=>ids.filter(id=>id!==p.id));})}]);}
  return <ScrollView contentContainerStyle={s.page}><Text style={s.description}>用相同角度，留下不同时间的自己。</Text><Chips items={Object.entries(POSE_NAMES).map(([key,label])=>({key,label}))} value={pose} onChange={v=>{setPose(v as Pose);setSelected([]);}}/>
-  <Card><DateField label="照片日期" value={date} onChange={setDate}/><Field label="照片备注（选填）" value={note} onChange={setNote}/><View style={s.row}><Button title="从相册选择" secondary onPress={()=>take(false)}/><Button title="拍照" onPress={()=>take(true)}/></View><Text style={s.caption}>照片保存在应用内；卸载前请导出完整备份。</Text></Card>
+  <Card><DateField label="照片日期" value={date} onChange={setDate}/><Field label="照片备注（选填）" value={note} onChange={setNote}/><View style={s.row}><Button title="从相册选择" secondary onPress={()=>take(false)}/><Button title="拍照" onPress={()=>take(true)}/></View><Text style={s.caption}>照片保存在本机；请定期导出完整备份。</Text></Card>
   {compare.length===2&&<Card><Text style={s.h2}>身体变化 · {POSE_NAMES[pose]}</Text><View style={s.row}>{compare.map(p=><View key={p.id} style={{flex:1}}><Image accessible accessibilityLabel={`${POSE_NAMES[p.pose]}对比照片 ${localDate(p.taken_at)}`} source={{uri:p.uri}} resizeMode="contain" style={s.compareImage}/><Text style={s.caption}>{localDate(p.taken_at).slice(0,10)}</Text><Text style={s.caption}>{p.note}</Text></View>)}</View></Card>}
   <View style={s.between}><Text style={s.h2}>照片时间线</Text><Text style={s.caption}>选择两张照片进行比较</Text></View>{!list.length&&<Empty text="还没有这个角度的照片，先记录一张吧"/>}
   <View style={s.photoGrid}>{list.map(p=><View key={p.id} style={s.photoCard}><Pressable accessibilityRole="button" accessibilityLabel={`选择照片 ${localDate(p.taken_at)}`} onPress={()=>setSelected(ids=>ids.includes(p.id)?ids.filter(id=>id!==p.id):[...ids.slice(-1),p.id])} style={[s.photoFrame,selected.includes(p.id)&&{borderColor:C.green,borderWidth:3}]}><Image source={{uri:p.uri}} style={s.photoImage} resizeMode="cover"/>{selected.includes(p.id)&&<View style={s.photoCheck}><Ionicons name="checkmark" size={18} color={C.onAccent}/></View>}</Pressable><Text style={s.caption}>{localDate(p.taken_at)}</Text>{!!p.note&&<Text style={s.caption}>{p.note}</Text>}<Button title="删除照片" danger small onPress={()=>remove(p)}/></View>)}</View>

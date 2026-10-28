@@ -1,0 +1,6 @@
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const {zipSync}=require('fflate');const root=path.resolve(__dirname,'..'),out=path.join(root,'dist-pwa'),delivery=path.join(root,'delivery/pwa');fs.mkdirSync(delivery,{recursive:true});
+const entries={},inventory=[];
+function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const f=path.join(dir,e.name);if(e.isDirectory())walk(f);else{const name=path.relative(out,f).split(path.sep).join('/'),bytes=fs.readFileSync(f);if(bytes.length>25*1024*1024)throw new Error('文件过大');entries[name]=bytes;inventory.push({file:name,bytes:bytes.length,sha256:crypto.createHash('sha256').update(bytes).digest('hex')});}}}walk(out);
+if(inventory.length>1000||!entries['index.html'])throw new Error('部署内容无效');
+const archive=zipSync(entries,{level:6});fs.writeFileSync(path.join(delivery,'myBody-PWA-Cloudflare.zip'),archive);fs.writeFileSync(path.join(delivery,'inventory.json'),JSON.stringify(inventory,null,2));fs.writeFileSync(path.join(delivery,'SHA256SUMS.txt'),crypto.createHash('sha256').update(archive).digest('hex')+'  myBody-PWA-Cloudflare.zip\n');fs.copyFileSync(path.join(root,'docs/PWA.md'),path.join(delivery,'部署与验收说明.md'));console.log(delivery);

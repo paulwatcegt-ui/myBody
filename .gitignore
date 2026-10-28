@@ -50,3 +50,5 @@ yarn-error.*
 /ios
 /android
 Docs/play_store_assets_guide.md
+
+/dist-pwa/
